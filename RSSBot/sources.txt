@@ -1,3 +1,1 @@
-http://www.nzz.ch/international.rss
-http://www.nzz.ch/wissenschaft.rss
-http://www.nzz.ch/mehr/digital.rss
+https://www.reddit.com/r/popular/.rss

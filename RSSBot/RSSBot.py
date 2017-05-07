@@ -13,13 +13,13 @@ import RSSReader
 # ### USER CONFIGURATION ### #
 
 # The bot's useragent. It should contain a short description of what it does and your username. e.g. "RSS Bot by /u/SmBe19"
-USERAGENT = ""
+USERAGENT = "app"
 
 # The name of the subreddit to post to. e.g. "funny"
-SUBREDDIT = ""
+SUBREDDIT = "FallasinSubreddit"
 
 # The time in seconds the bot should sleep until it checks again.
-SLEEP = 60*60
+SLEEP = 15#60*60
 
 # If True, the bot will submit a link even if reddit says it was already submitted. This can be the case if it was submitted in an other subreddit or by an other user, or if the bot failed with keeping track of already submitted articles (shouldn't be the case).
 RESUBMIT_ANYWAYS = True
@@ -98,10 +98,28 @@ def write_config_done(done):
 
 # main procedure
 def run_bot():
-	r = praw.Reddit(USERAGENT)
-	o = OAuth2Util.OAuth2Util(r)
-	o.refresh()
-	sub = r.get_subreddit(SUBREDDIT)
+	# r = praw.Reddit(USERAGENT)
+	# reddit = praw.Reddit('app', user_agent=USERAGENT)
+
+	with open('credentials', 'r') as myfile:
+		data = myfile.read()
+
+	StringTranslator = []
+	StringTranslator = data.split('\n')
+
+	user_agent = StringTranslator[0]
+	client_id = StringTranslator[1]
+	client_secret = StringTranslator[2]
+	username = StringTranslator[3]
+	password = StringTranslator[4]
+
+	reddit = praw.Reddit(user_agent=user_agent,
+						 client_id=client_id, client_secret=client_secret,
+						 username=username, password=password)
+
+	# o = OAuth2Util.OAuth2Util(reddit)
+	# o.refresh()
+	sub = reddit.subreddit(SUBREDDIT)
 
 	log.info("Start bot for subreddit %s", SUBREDDIT)
 
@@ -109,25 +127,30 @@ def run_bot():
 
 	while True:
 		try:
-			o.refresh()
+			# o.refresh()
 			sources = read_config_sources()
 
 			log.info("check sources")
 			newArticles = []
 			for source in sources:
-				newArticles.extend(RSSReader.get_new_articles(source))
+				newArticles.extend(unicode(RSSReader.get_new_articles(source)).encode('utf-8'))
+
+			combinedArticle = ""
 
 			for article in newArticles:
-				if article[3] not in done:
-					done.add(article[3])
-					try:
-						submission = sub.submit(article[0], url=article[1], resubmit=RESUBMIT_ANYWAYS)
-						if POST_DESCRIPTION and article[2] is not None:
-							submission.add_comment(DESCRIPTION_FORMAT.format(article[2]))
-					except praw.errors.AlreadySubmitted:
-						log.info("already submitted")
-					else:
-						log.info("submit article")
+				combinedArticle = article + combinedArticle
+				# if article[3] not in done:
+				# 	done.add(article[3])
+				# 	try:
+				# 		submission = sub.submit(article[0], url=article[1], resubmit=RESUBMIT_ANYWAYS)
+				# 		if POST_DESCRIPTION and article[2] is not None:
+				# 			submission.add_comment(DESCRIPTION_FORMAT.format(article[2]))
+				# 	except praw.errors.AlreadySubmitted:
+				# 		log.info("already submitted")
+				# 	else:
+				# 		log.info("submit article")
+
+			print combinedArticle
 
 		# Allows the bot to exit on ^C, all other exceptions are ignored
 		except KeyboardInterrupt:
